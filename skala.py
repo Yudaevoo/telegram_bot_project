@@ -17,7 +17,7 @@ username = ''
 @bot.message_handler(commands=['start'])
 def get_text_messages(message):
     bot.send_message(message.from_user.id, "Привет, меня зовут Gallows Bot!")
-    bot.send_message(message.from_user.id, "Как тебя зовут?")
+    bot.send_message(message.from_user.id, "Как вас зовут?")
     bot.register_next_step_handler(message, step_1)
 
 
@@ -25,20 +25,20 @@ def step_1(message):
     global username
     username = message.text
     bot.send_message(message.from_user.id, f"Приятно познакомиться, {username}!")
-    bot.send_message(message.from_user.id, '''Давай сыграем в игру "Виселица"''')
-    bot.send_message(message.from_user.id, "Чтобы узнать правила, напиши /rules.")
+    bot.send_message(message.from_user.id, '''Сыграем в игру "Виселица"''')
+    bot.send_message(message.from_user.id, "Чтобы узнать правила, напишите /rules.")
 
 
 @bot.message_handler(commands=['rules'])
 def rules(message):
     global images
     if message.text == "/rules":
-        bot.send_message(message.from_user.id, "Правила просты: Я загадываю слово, у тебя есть несколько ходов,\
-чтобы его отгадать. Если отгадаешь букву, я её открою. В противном случае - дорисую одну палочку на эту картинку.")
+        bot.send_message(message.from_user.id, "Правила просты: Я загадываю слово, у вас есть несколько ходов, \
+чтобы его отгадать. Если отгадаете букву, я её открою. В противном случае - дорисую одну палочку на эту картинку. \
+У вас есть 10 попыток, чтобы отгадать слово!")
 
         bot.send_photo('1327245563', open(images[0], 'rb'))
-        bot.send_message(message.from_user.id,
-                         "У тебя есть 10 попыток, чтобы отгадать слово! Если готов сыграть, нажми /play!")
+        bot.send_message(message.from_user.id, "Если готовы сыграть, нажмите /play!")
 
 
 @bot.message_handler(commands=['play'])
@@ -57,16 +57,16 @@ def play(message):
 
 @bot.message_handler(content_types=['text'])
 def letters(message):
-    global secret_word
+    global secret_word, random_word
     global n, images, new_word
     word = secret_word
     letter = message.text
     if len(letter) != 1:
-        bot.send_message(message.from_user.id, 'Так нечестно! Ты ввёл больше одной буквы!')
+        bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели больше одной буквы!')
     elif letter.lower() not in 'ёйцукенгшщзхъфывапролджэячсмитьбю':
-        bot.send_message(message.from_user.id, 'Так нечестно! Ты ввёл символ, не являющийся буквой русского алфавита!')
+        bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели символ, не являющийся буквой русского алфавита!')
     elif letter.upper() in used_letters:
-        bot.send_message(message.from_user.id, 'Ты уже использовал эту букву!')
+        bot.send_message(message.from_user.id, 'Вы уже использовали эту букву!')
     elif letter.upper() not in random_word.upper():
         bot.send_message(message.from_user.id, 'Такой буквы нет в слове!')
         n -= 1
@@ -90,6 +90,7 @@ def letters(message):
 
     if n == 0:
         bot.send_message(message.from_user.id, 'К сожалению, попытки закончились! Вы проиграли! :(')
+        bot.send_message(message.from_user.id, f'Я загадал слово {random_word.upper()}')
         bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
         n = 6
 
