@@ -15,7 +15,7 @@ username = ''
 
 
 @bot.message_handler(commands=['start'])
-def get_text_messages(message):
+def start(message):
     bot.send_message(message.from_user.id, "Привет, меня зовут Gallows Bot!")
     bot.send_message(message.from_user.id, "Как вас зовут?")
     bot.register_next_step_handler(message, step_1)
@@ -37,7 +37,7 @@ def rules(message):
 чтобы его отгадать. Если отгадаете букву, я её открою. В противном случае - дорисую одну палочку на эту картинку. \
 У вас есть 10 попыток, чтобы отгадать слово!")
 
-        bot.send_photo('1327245563', open(images[0], 'rb'))
+        bot.send_photo(message.from_user.id, open(images[0], 'rb'))
         bot.send_message(message.from_user.id, "Если готовы сыграть, нажмите /play!")
 
 
@@ -57,42 +57,45 @@ def play(message):
 
 @bot.message_handler(content_types=['text'])
 def letters(message):
-    global secret_word, random_word
-    global n, images, new_word
-    word = secret_word
-    letter = message.text
-    if len(letter) != 1:
-        bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели больше одной буквы!')
-    elif letter.lower() not in 'ёйцукенгшщзхъфывапролджэячсмитьбю':
-        bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели символ, не являющийся буквой русского алфавита!')
-    elif letter.upper() in used_letters:
-        bot.send_message(message.from_user.id, 'Вы уже использовали эту букву!')
-    elif letter.upper() not in random_word.upper():
-        bot.send_message(message.from_user.id, 'Такой буквы нет в слове!')
-        n -= 1
-        bot.send_photo('1327245563', open(images[10 - n], 'rb'))
-        used_letters.append(letter.upper())
-    elif letter.upper() in random_word:
-        guessed_letters.append(letter.upper())
-        used_letters.append(letter.upper())
-        new_word = ''
-        for elem in random_word:
-            if elem in guessed_letters:
-                new_word += elem.upper()
-            else:
-                new_word += '🔴'
-        word = new_word
-        bot.send_message(message.from_user.id, new_word)
-    if '🔴' not in word:
-        bot.send_message(message.from_user.id, 'Поздравляю! Вы отгадали слово!')
-        bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
-        n = 6
+    if message.text == '/start':
+        bot.register_next_step_handler(message, start)
+    else:
+        global secret_word, random_word
+        global n, images, new_word
+        word = secret_word
+        letter = message.text
+        if len(letter) != 1:
+            bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели больше одной буквы!')
+        elif letter.lower() not in 'ёйцукенгшщзхъфывапролджэячсмитьбю':
+            bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели символ, не являющийся буквой русского алфавита!')
+        elif letter.upper() in used_letters:
+            bot.send_message(message.from_user.id, 'Вы уже использовали эту букву!')
+        elif letter.upper() not in random_word.upper():
+            bot.send_message(message.from_user.id, 'Такой буквы нет в слове!')
+            n -= 1
+            bot.send_photo(message.from_user.id, open(images[10 - n], 'rb'))
+            used_letters.append(letter.upper())
+        elif letter.upper() in random_word:
+            guessed_letters.append(letter.upper())
+            used_letters.append(letter.upper())
+            new_word = ''
+            for elem in random_word:
+                if elem in guessed_letters:
+                    new_word += elem.upper()
+                else:
+                    new_word += '🔴'
+            word = new_word
+            bot.send_message(message.from_user.id, new_word)
+        if '🔴' not in word:
+            bot.send_message(message.from_user.id, 'Поздравляю! Вы отгадали слово!')
+            bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
+            n = 6
 
-    if n == 0:
-        bot.send_message(message.from_user.id, 'К сожалению, попытки закончились! Вы проиграли! :(')
-        bot.send_message(message.from_user.id, f'Я загадал слово {random_word.upper()}')
-        bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
-        n = 6
+        if n == 0:
+            bot.send_message(message.from_user.id, 'К сожалению, попытки закончились! Вы проиграли! :(')
+            bot.send_message(message.from_user.id, f'Я загадал слово {random_word.upper()}')
+            bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
+            n = 6
 
 
 if __name__ == '__main__':
