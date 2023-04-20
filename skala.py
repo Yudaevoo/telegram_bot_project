@@ -11,7 +11,7 @@ words = get_list_of_words('words.txt')
 images = ['stick_1.png', 'stick_2.png', 'stick_3.png', 'stick_4.png',
           '1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png']
 bot = telebot.TeleBot('5707691226:AAG6wIp3HFaw7RDMxR96_efTthiRiP7Rt1U')
-username = ''
+users = {}
 
 
 @bot.message_handler(commands=['start'])
@@ -22,9 +22,11 @@ def start(message):
 
 
 def step_1(message):
-    global username
     username = message.text
-    bot.send_message(message.from_user.id, f"Приятно познакомиться, {username}!")
+    user_data = []
+    user_data.append(username)
+    users.update({message.from_user.id: user_data})
+    bot.send_message(message.from_user.id, f"Приятно познакомиться, {users[message.from_user.id][0]}!")
     bot.send_message(message.from_user.id, '''Сыграем в игру "Виселица"''')
     bot.send_message(message.from_user.id, "Чтобы узнать правила, напишите /rules.")
 
@@ -43,15 +45,19 @@ def rules(message):
 
 @bot.message_handler(commands=['play'])
 def play(message):
-    global n, random_word, secret_word, used_letters, guessed_letters, images
     n = 10
     random_word = random.choice(words).upper()
     secret_word = ''
     used_letters = []
     guessed_letters = []
     secret_word = '🔴' * len(random_word)
+    users[message.from_user.id].append(random_word)
+    users[message.from_user.id].append(secret_word)
+    users[message.from_user.id].append(used_letters)
+    users[message.from_user.id].append(guessed_letters)
+    users[message.from_user.id].append(n)
     if message.text == "/play":
-        bot.send_message(message.from_user.id, secret_word)
+        bot.send_message(message.from_user.id, users[message.from_user.id][2])
     bot.register_next_step_handler(message, letters)
 
 
@@ -60,27 +66,26 @@ def letters(message):
     if message.text == '/start':
         bot.register_next_step_handler(message, start)
     else:
-        global secret_word, random_word
-        global n, images, new_word
-        word = secret_word
+        global images
+        word = users[message.from_user.id][2]
         letter = message.text
         if len(letter) != 1:
             bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели больше одной буквы!')
         elif letter.lower() not in 'ёйцукенгшщзхъфывапролджэячсмитьбю':
             bot.send_message(message.from_user.id, 'Так нечестно! Вы ввели символ, не являющийся буквой русского алфавита!')
-        elif letter.upper() in used_letters:
+        elif letter.upper() in users[message.from_user.id][3]:
             bot.send_message(message.from_user.id, 'Вы уже использовали эту букву!')
-        elif letter.upper() not in random_word.upper():
+        elif letter.upper() not in users[message.from_user.id][1].upper():
             bot.send_message(message.from_user.id, 'Такой буквы нет в слове!')
-            n -= 1
-            bot.send_photo(message.from_user.id, open(images[10 - n], 'rb'))
-            used_letters.append(letter.upper())
-        elif letter.upper() in random_word:
-            guessed_letters.append(letter.upper())
-            used_letters.append(letter.upper())
+            users[message.from_user.id][5] -= 1
+            bot.send_photo(message.from_user.id, open(images[10 - users[message.from_user.id][5]], 'rb'))
+            users[message.from_user.id][3].append(letter.upper())
+        elif letter.upper() in users[message.from_user.id][1]:
+            users[message.from_user.id][4].append(letter.upper())
+            users[message.from_user.id][3].append(letter.upper())
             new_word = ''
-            for elem in random_word:
-                if elem in guessed_letters:
+            for elem in users[message.from_user.id][1]:
+                if elem in users[message.from_user.id][4]:
                     new_word += elem.upper()
                 else:
                     new_word += '🔴'
@@ -89,13 +94,23 @@ def letters(message):
         if '🔴' not in word:
             bot.send_message(message.from_user.id, 'Поздравляю! Вы отгадали слово!')
             bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
-            n = 6
+            users[message.from_user.id][5] = 10
+            users[message.from_user.id][1] = random.choice(words).upper()
+            users[message.from_user.id][2] = ''
+            users[message.from_user.id][3] = []
+            users[message.from_user.id][4] = []
+            users[message.from_user.id][2] = '🔴' * len(users[message.from_user.id][1])
 
-        if n == 0:
+        if users[message.from_user.id][5] == 0:
             bot.send_message(message.from_user.id, 'К сожалению, попытки закончились! Вы проиграли! :(')
-            bot.send_message(message.from_user.id, f'Я загадал слово {random_word.upper()}')
+            bot.send_message(message.from_user.id, f'Я загадал слово {users[message.from_user.id][1].upper()}')
             bot.send_message(message.from_user.id, 'Нажмите /play, чтобы сыграть ещё!')
-            n = 6
+            users[message.from_user.id][5] = 10
+            users[message.from_user.id][1] = random.choice(words).upper()
+            users[message.from_user.id][2] = ''
+            users[message.from_user.id][3] = []
+            users[message.from_user.id][4] = []
+            users[message.from_user.id][2] = '🔴' * len(users[message.from_user.id][1])
 
 
 if __name__ == '__main__':
